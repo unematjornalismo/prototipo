@@ -127,7 +127,7 @@ const generateRandomDuration = () => {
 let episodesData = [
     {
         id: 1,
-        nome: "1.Segunda Chance: A Transformação na Comunidade Terapêutica",
+        nome: "1.Apresentação",
         autor: "Thiago Smaykel, Ayana, Fernanda,",
         data: "12 Nov 2025",
         descricao: "aduio",
