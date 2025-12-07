@@ -14,45 +14,54 @@ const episodeManager = (() => {
     let bannerTimeout;
     
     const initializeEpisodeOrder = () => {
+        // Pega todos os episódios disponíveis
+        currentEpisodes = [...episodesData];
+        console.log('Episódios disponíveis:', currentEpisodes.map(ep => ep.id));
+        currentBannerEpisode = getBannerEpisode(); // Banner com base na quantidade de episódios
+    };
+    
+    const getBannerEpisode = () => {
+        // Se tiver apenas 1 episódio, retorna ele
         if (episodesData.length === 1) {
-            currentEpisodes = [...episodesData]; 
-            console.log('Apenas 1 episódio disponível:', currentEpisodes.map(ep => ep.id));
-        } else {
-            currentEpisodes = [...episodesData].slice(0, 3); 
-            console.log('Ordem FIXA inicializada:', currentEpisodes.map(ep => ep.id));
+            return episodesData[0];
         }
-        currentBannerEpisode = getRandomBannerEpisode();
+        // Se tiver 2 ou mais, escolhe aleatoriamente
+        const randomIndex = Math.floor(Math.random() * episodesData.length);
+        return episodesData[randomIndex];
     };
     
-    const getRandomBannerEpisode = (excludeIds = []) => {
-        const availableEpisodes = episodesData.filter(ep => !excludeIds.includes(ep.id));
-        if (availableEpisodes.length === 0) return episodesData[0];
+    const getNextBannerEpisode = (currentEpisode) => {
+        // Se tiver apenas 1 episódio, retorna o mesmo
+        if (episodesData.length === 1) {
+            return episodesData[0];
+        }
         
-        const randomIndex = Math.floor(Math.random() * availableEpisodes.length);
-        return availableEpisodes[randomIndex];
-    };
-    
-    const getNextEpisode = (currentIndex) => {
+        // Se tiver 2 ou mais, pega o próximo na sequência
+        const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode.id);
         const nextIndex = (currentIndex + 1) % episodesData.length;
         return episodesData[nextIndex];
+    };
+    
+    const getPrevBannerEpisode = (currentEpisode) => {
+        // Se tiver apenas 1 episódio, retorna o mesmo
+        if (episodesData.length === 1) {
+            return episodesData[0];
+        }
+        
+        // Se tiver 2 ou mais, pega o anterior na sequência
+        const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode.id);
+        const prevIndex = (currentIndex - 1 + episodesData.length) % episodesData.length;
+        return episodesData[prevIndex];
     };
     
     const renderEpisodes = () => {
         const container = document.getElementById('episodes-container');
         container.innerHTML = '';
         
-        if (episodesData.length > 1) {
-            while (currentEpisodes.length < 3) {
-                const lastEpisode = currentEpisodes[currentEpisodes.length - 1];
-                const lastIndex = episodesData.findIndex(ep => ep.id === lastEpisode.id);
-                const nextEpisode = getNextEpisode(lastIndex);
-                currentEpisodes.push(nextEpisode);
-            }
-        }
+        // Se tiver menos de 3 episódios, mostra todos
+        const episodesToShow = Math.min(currentEpisodes.length, 3);
         
-        const episodesToRender = episodesData.length === 1 ? 1 : 3;
-        
-        for (let i = 0; i < episodesToRender; i++) {
+        for (let i = 0; i < episodesToShow; i++) {
             const episode = currentEpisodes[i];
             const episodeElement = document.createElement('div');
             
@@ -76,10 +85,11 @@ const episodeManager = (() => {
             episodeElement.innerHTML = `
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-4 flex-1">
-                        <!-- Ícone de play que aparece no hover -->
-                        <div class="play-icon opacity-0 group-hover:opacity-100 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center transition-all duration-200 play-btn"
-                             data-episode-id="${episode.id}">
-                            <i class="fa-solid fa-play text-white text-xs ml-0.5"></i>
+                        <!-- Ícone do episódio com imagem -->
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full bg-cover bg-center" 
+                                 style="background-image: url('${episode.imageUrl}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
+                            </div>
                         </div>
                         
                         <div class="flex-1 min-w-0">
@@ -90,8 +100,10 @@ const episodeManager = (() => {
                     
                     <div class="flex items-center space-x-4">
                         <span class="text-gray-400 text-sm">${displayDuration}</span>
-                        <button class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition-all duration-200">
-                            <i class="fa-solid fa-ellipsis text-lg"></i>
+                        <!-- Ícone de play que aparece no hover -->
+                        <button class="play-btn opacity-0 group-hover:opacity-100 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center transition-all duration-200 ml-4"
+                                data-episode-id="${episode.id}">
+                            <i class="fa-solid fa-play text-white text-xs ml-0.5"></i>
                         </button>
                     </div>
                 </div>
@@ -104,43 +116,6 @@ const episodeManager = (() => {
         }
         
         setupEpisodeListeners();
-        
-        console.log('Episódios atuais no carrossel:', currentEpisodes.slice(0, episodesToRender).map(ep => ep.nome));
-    };
-    
-    const rotateEpisodes = () => {
-        if (episodesData.length <= 1) return;
-        
-        const removedEpisode = currentEpisodes.shift();
-        const lastEpisode = currentEpisodes[currentEpisodes.length - 1];
-        const lastIndex = episodesData.findIndex(ep => ep.id === lastEpisode.id);
-        const nextEpisode = getNextEpisode(lastIndex);
-        currentEpisodes.push(nextEpisode);
-        
-        console.log(`Rotacionado (ORDEM FIXA): Removido "${removedEpisode.nome}", Adicionado "${nextEpisode.nome}"`);
-        
-        renderEpisodes();
-    };
-    
-    const rotateToEpisode = (targetEpisodeId) => {
-        if (episodesData.length <= 1) return;
-        
-        const targetEpisode = episodesData.find(ep => ep.id === targetEpisodeId);
-        if (!targetEpisode) return;
-        
-        const currentPosition = currentEpisodes.findIndex(ep => ep.id === targetEpisodeId);
-        
-        if (currentPosition === -1) {
-            currentEpisodes[2] = targetEpisode;
-            console.log(`Episódio ${targetEpisode.nome} adicionado ao carrossel`);
-        } else if (currentPosition > 0) {
-            const rotationsNeeded = currentPosition;
-            for (let i = 0; i < rotationsNeeded; i++) {
-                rotateEpisodes();
-            }
-        }
-        
-        renderEpisodes();
     };
     
     const setupEpisodeListeners = () => {
@@ -149,16 +124,12 @@ const episodeManager = (() => {
         
         episodes.forEach(episode => {
             episode.addEventListener('click', (e) => {
-                if (episodesData.length <= 1) return;
-                
                 if (!e.target.closest('.play-btn')) {
-                    const position = parseInt(episode.dataset.position);
                     const episodeId = parseInt(episode.dataset.episode);
+                    const episodeData = episodesData.find(ep => ep.id === episodeId);
                     
-                    if (position === 0) {
-                        rotateEpisodes();
-                    } else if (position === 1 || position === 2) {
-                        rotateToEpisode(episodeId);
+                    if (episodeData && window.audioManager) {
+                        playEpisode(episodeData, episode);
                     }
                 }
             });
@@ -167,22 +138,11 @@ const episodeManager = (() => {
         playButtons.forEach(button => {
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const episodeElement = button.closest('.episode');
                 const episodeId = parseInt(button.getAttribute('data-episode-id'));
                 const episodeData = episodesData.find(ep => ep.id === episodeId);
                 
-                if (episodesData.length > 1) {
-                    const position = parseInt(episodeElement.dataset.position);
-                    
-                    if (position === 0) {
-                        rotateEpisodes();
-                    } else if (position === 1 || position === 2) {
-                        rotateToEpisode(episodeId);
-                    }
-                }
-                
                 if (episodeData && window.audioManager) {
-                    playEpisode(episodeData, episodeElement);
+                    playEpisode(episodeData);
                 }
             });
         });
@@ -219,7 +179,14 @@ const episodeManager = (() => {
         }
         
         bannerDescription.textContent = episode.descricao;
-        podcastImage.className = `w-48 h-48 md:w-64 md:h-64 ${episode.bannerGradient} rounded-full shadow-lg flex-shrink-0 banner-transition`;
+        
+        // Atualiza a imagem do banner
+        podcastImage.style.backgroundImage = `url('${episode.imageUrl}')`;
+        podcastImage.className = `w-48 h-48 md:w-64 md:h-64 rounded-full shadow-lg flex-shrink-0 banner-transition bg-cover bg-center`;
+        podcastImage.style.backgroundSize = 'cover';
+        podcastImage.style.backgroundPosition = 'center center';
+        podcastImage.style.backgroundRepeat = 'no-repeat';
+        
         updateNavigationHints();
         
         currentBannerEpisode = episode;
@@ -227,20 +194,18 @@ const episodeManager = (() => {
     };
     
     const nextBanner = () => {
+        // Se tiver apenas 1 episódio, não faz nada
         if (episodesData.length <= 1) return;
         
-        const currentEpisodeId = currentBannerEpisode ? currentBannerEpisode.id : episodesData[0].id;
-        const nextEpisode = getRandomBannerEpisode([currentEpisodeId]);
-        
+        const nextEpisode = getNextBannerEpisode(currentBannerEpisode);
         changeBanner(nextEpisode);
     };
     
     const prevBanner = () => {
+        // Se tiver apenas 1 episódio, não faz nada
         if (episodesData.length <= 1) return;
         
-        const currentEpisodeId = currentBannerEpisode ? currentBannerEpisode.id : episodesData[0].id;
-        const prevEpisode = getRandomBannerEpisode([currentEpisodeId]);
-        
+        const prevEpisode = getPrevBannerEpisode(currentBannerEpisode);
         changeBanner(prevEpisode);
     };
     
@@ -255,24 +220,32 @@ const episodeManager = (() => {
             updateBanner(episode);
             bannerContent.classList.remove('banner-hidden');
             bannerContent.classList.add('banner-visible');
-            resetAutoRotation();
+            
+            // Reinicia a rotação automática apenas se tiver 2 ou mais episódios
+            if (episodesData.length >= 2) {
+                resetAutoRotation();
+            }
         }, 300);
     };
     
     const updateNavigationHints = () => {
+        // Se tiver apenas 1 episódio, esconde as setas
         if (episodesData.length <= 1) {
-            hintLeft.style.opacity = '0';
-            hintRight.style.opacity = '0';
+            hintLeft.style.display = 'none';
+            hintRight.style.display = 'none';
         } else {
+            hintLeft.style.display = 'block';
+            hintRight.style.display = 'block';
             hintLeft.style.opacity = '1';
             hintRight.style.opacity = '1';
         }
     };
     
     const setupBannerNavigation = () => {
+        // Se tiver apenas 1 episódio, não configura navegação
+        if (episodesData.length <= 1) return;
+        
         bannerArea.addEventListener('mousemove', (e) => {
-            if (episodesData.length <= 1) return;
-            
             const bannerRect = bannerArea.getBoundingClientRect();
             const relativeX = e.clientX - bannerRect.left;
             const bannerWidth = bannerRect.width;
@@ -281,20 +254,35 @@ const episodeManager = (() => {
             clearTimeout(bannerTimeout);
             
             if (relativeX < threshold) {
-                setTimeout(prevBanner, 500);
+                hintLeft.style.opacity = '1';
+                hintRight.style.opacity = '0.5';
+                setTimeout(() => prevBanner(), 500);
             } else if (relativeX > bannerWidth - threshold) {
-                setTimeout(nextBanner, 500);
+                hintLeft.style.opacity = '0.5';
+                hintRight.style.opacity = '1';
+                setTimeout(() => nextBanner(), 500);
             } else {
+                hintLeft.style.opacity = '0.5';
+                hintRight.style.opacity = '0.5';
                 resetAutoRotation();
             }
         });
         
-        bannerArea.addEventListener('click', (e) => {
-            if (episodesData.length <= 1) return;
-            
-            if (!e.target.closest('button')) {
-                nextBanner();
-            }
+        bannerArea.addEventListener('mouseleave', () => {
+            hintLeft.style.opacity = '0.5';
+            hintRight.style.opacity = '0.5';
+            resetAutoRotation();
+        });
+        
+        // Adiciona clique nas setas
+        hintLeft.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prevBanner();
+        });
+        
+        hintRight.addEventListener('click', (e) => {
+            e.stopPropagation();
+            nextBanner();
         });
     };
     
@@ -302,59 +290,61 @@ const episodeManager = (() => {
         mainPlayBtn.addEventListener('click', () => {
             if (currentBannerEpisode && window.audioManager) {
                 playEpisode(currentBannerEpisode);
-                if (episodesData.length > 1) {
-                    const isInCarousel = currentEpisodes.some(ep => ep.id === currentBannerEpisode.id);
-                    if (!isInCarousel) {
-                        currentEpisodes[2] = currentBannerEpisode;
-                        renderEpisodes();
-                    }
-                    
-                    rotateToEpisode(currentBannerEpisode.id);
-                }
             }
         });
     };
     
     const resetAutoRotation = () => {
         clearTimeout(bannerTimeout);
-        startAutoRotation();
+        
+        // Inicia rotação automática apenas se tiver 2 ou mais episódios
+        if (episodesData.length >= 2) {
+            startAutoRotation();
+        }
     };
     
     const startAutoRotation = () => {
-        if (episodesData.length <= 1) return;
-        
-        bannerTimeout = setTimeout(() => {
-            nextBanner(); 
-        }, 8000);
+        // Apenas inicia rotação automática se tiver 2 ou mais episódios
+        if (episodesData.length >= 2) {
+            bannerTimeout = setTimeout(() => {
+                nextBanner();
+            }, 8000); // 8 segundos entre mudanças
+        }
     };
     
     const init = () => {
-        if (typeof episodesData === 'undefined') {
+        if (typeof episodesData === 'undefined' || episodesData.length === 0) {
             setTimeout(init, 100);
             return;
         }
         
-        initializeEpisodeOrder(); 
+        console.log(`Inicializando com ${episodesData.length} episódio(s)`);
+        
+        initializeEpisodeOrder();
         renderEpisodes();
         setupBannerNavigation();
         setupBannerPlay();
-        updateNavigationHints();
-        startAutoRotation();
-        const randomBannerEpisode = getRandomBannerEpisode();
-        updateBanner(randomBannerEpisode);
         
-        console.log('Sistema de carrossel inicializado');
+        // Define o episódio inicial do banner
+        const initialBannerEpisode = getBannerEpisode();
+        updateBanner(initialBannerEpisode);
+        updateNavigationHints();
+        
+        // Inicia rotação automática apenas se tiver 2 ou mais episódios
+        if (episodesData.length >= 2) {
+            startAutoRotation();
+        }
+        
+        console.log('Sistema de episódios inicializado');
         console.log('Episódios disponíveis:', episodesData.length);
-        console.log('Episódios no carrossel:', currentEpisodes.map(ep => ep.nome));
-        console.log('Episódio inicial do banner:', randomBannerEpisode.nome);
+        console.log('Episódio inicial do banner:', initialBannerEpisode.nome);
+        console.log('Rotação automática:', episodesData.length >= 2 ? 'Ativada (8s)' : 'Desativada (apenas 1 episódio)');
     };
     
     return {
         init,
         nextBanner,
         prevBanner,
-        rotateEpisodes,
-        rotateToEpisode,
         playEpisode
     };
 })();

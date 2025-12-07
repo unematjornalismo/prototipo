@@ -111,12 +111,7 @@ const getAudioDuration = (audioUrl) => {
             resolve(duration);
         });
 
-        audio.addEventListener('error', (e) => {
-            clearTimeout(timeout);
-            console.warn(`Erro ao carregar áudio: ${audioUrl}, usando duração padrão`);
-            audio.src = '';
-            resolve(generateRandomDuration());
-        });
+        
 
         audio.preload = 'metadata';
         audio.src = audioUrl;
@@ -132,15 +127,15 @@ const generateRandomDuration = () => {
 let episodesData = [
     {
         id: 1,
-        nome: "1. Renascer na Comunidade",
-        autor: "Thais Arcanjo,Sarah Massaroli,Luã Gonzaga ",
-        data: "30 Nov 2025",
-        descricao: "Este episódio desmistifica as comunidades terapêuticas. Com depoimentos reais, mostramos como a rotina disciplinada e o apoio emocional criam um ambiente de acolhimento para uma segunda chance e transformação",
-        audio: "audios/audiooriginal.mp3",
-        imageGradient: "from-purple-500 to-blue-500",
+        nome: "1.Segunda Chance: A Transformação na Comunidade Terapêutica",
+        autor: "Thiago Smaykel, Ayana, Fernanda,",
+        data: "12 Nov 2025",
+        descricao: "aduio",
+        audio: "audios/Avant_Jazz.mp3",
+        imageUrl: "https://cdn.pixabay.com/photo/2023/10/07/10/01/ai-generated-8299888_1280.jpg",
         bannerGradient: "gradient-1",
         defaultDuration: 300
-    },//,
+    }//,
     // {
     //     id: 2,
     //     nome: "2. Valse Gymnopedie", 
@@ -148,7 +143,7 @@ let episodesData = [
     //     data: "5 Nov 2025",
     //     descricao: "This is Gymnopedie #1 from Erik Satie (1888), but it has a beat and you can dance to it.",
     //     audio: "audios/Valse_Gymnopedie.mp3",
-    //     imageGradient: "from-pink-500 to-purple-500",
+    //     imageUrl: "https://cdn.pixabay.com/photo/2023/10/07/10/01/ai-generated-8299888_1280.jpg",
     //     bannerGradient: "gradient-2",
     //     defaultDuration: 270
     // },
@@ -159,7 +154,7 @@ let episodesData = [
     //     data: "29 Out 2025",
     //     descricao: "The show will begin shortly.",
     //     audio: "audios/Pleasant_Porridge.mp3",
-    //     imageGradient: "from-green-500 to-blue-500",
+    //     imageUrl: "https://cdn.pixabay.com/photo/2023/10/07/10/01/ai-generated-8299888_1280.jpg",
     //     bannerGradient: "gradient-3",
     //     defaultDuration: 288
     // },
@@ -170,7 +165,7 @@ let episodesData = [
     //     data: "22 Out 2025",
     //     descricao: "Just your run of the mill nice jazz; processed to sound a lot older than it is.",
     //     audio: "audios/Night_in_Venice.mp3",
-    //     imageGradient: "from-yellow-500 to-red-500",
+    //     imageUrl: "https://cdn.pixabay.com/photo/2023/10/07/10/01/ai-generated-8299888_1280.jpg",
     //     bannerGradient: "gradient-4",
     //     defaultDuration: 312
     // },
@@ -181,7 +176,7 @@ let episodesData = [
     //     data: "15 Out 2025",
     //     descricao: "Sort of rock, but not. Neither is this jazz or funk... I really don't know what this is... but it is kind of fun.",
     //     audio: "audios/Plain_Loafer.mp3",
-    //     imageGradient: "from-blue-500 to-purple-500",
+    //     imageUrl: "https://cdn.pixabay.com/photo/2023/10/07/10/01/ai-generated-8299888_1280.jpg",
     //     bannerGradient: "gradient-5",
     //     defaultDuration: 282
     // }
@@ -288,15 +283,15 @@ const audioManager = (() => {
     let isMuted = false;
     let originalEpisodeOrder = [...episodesData];
 
-
+    // Funções auxiliares para shuffle
     const shuffleEpisodes = () => {
-   
+        // Embaralha o array de episódios usando Fisher-Yates
         for (let i = episodesData.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [episodesData[i], episodesData[j]] = [episodesData[j], episodesData[i]];
         }
         
-    
+        // Atualiza a interface se necessário
         if (window.searchSystem && !window.searchSystem.isSearching()) {
             updateEpisodesDisplay();
         }
@@ -305,7 +300,7 @@ const audioManager = (() => {
     const restoreOriginalOrder = () => {
         episodesData = [...originalEpisodeOrder];
         
-
+        // Atualiza a interface se necessário
         if (window.searchSystem && !window.searchSystem.isSearching()) {
             updateEpisodesDisplay();
         }
@@ -330,7 +325,7 @@ const audioManager = (() => {
         console.log('Shuffle desativado automaticamente');
     };
 
-   
+    // Função para atualizar a exibição dos episódios
     const updateEpisodesDisplay = () => {
         if (window.searchSystem && window.searchSystem.reapplySearchIfNeeded) {
             window.searchSystem.reapplySearchIfNeeded();
@@ -341,12 +336,12 @@ const audioManager = (() => {
         if (!currentEpisode) return episodesData[0];
         
         if (isShuffling) {
-            
+            // No modo shuffle, pega o próximo episódio na ordem embaralhada
             const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
             const nextIndex = (currentIndex + 1) % episodesData.length;
             return episodesData[nextIndex];
         } else {
-            
+            // No modo normal, pega o próximo episódio na ordem original
             const currentEpisodeData = episodesData.find(ep => ep.id === currentEpisode);
             const currentId = currentEpisodeData.id;
             const nextId = (currentId % episodesData.length) + 1;
@@ -358,12 +353,12 @@ const audioManager = (() => {
         if (!currentEpisode) return episodesData[0];
         
         if (isShuffling) {
-            
+            // No modo shuffle, pega o episódio anterior na ordem embaralhada
             const currentIndex = episodesData.findIndex(ep => ep.id === currentEpisode);
             const previousIndex = (currentIndex - 1 + episodesData.length) % episodesData.length;
             return episodesData[previousIndex];
         } else {
-           
+            // No modo normal, pega o episódio anterior na ordem original
             const currentEpisodeData = episodesData.find(ep => ep.id === currentEpisode);
             const currentId = currentEpisodeData.id;
             const previousId = currentId - 1 > 0 ? currentId - 1 : episodesData.length;
@@ -427,7 +422,7 @@ const audioManager = (() => {
             if (currentEpisodeData && currentEpisodeData.actualDuration) {
                 duration.textContent = formatTime(currentEpisodeData.actualDuration);
             } else {
-                duration.textContent = "14:29";
+                duration.textContent = "5:00";
             }
         }
     };
@@ -575,11 +570,17 @@ const audioManager = (() => {
     const updatePlayerInfo = (episodeData) => {
         currentTrack.textContent = episodeData.nome;
         currentPodcast.textContent = episodeData.autor || 'Podcast Gramsci';
-        currentEpisodeImage.className = `w-10 h-10 bg-gradient-to-br ${episodeData.imageGradient} rounded-full`;
+        // Atualiza a imagem com ajuste perfeito e centralização
+        currentEpisodeImage.style.backgroundImage = `url('${episodeData.imageUrl}')`;
+        currentEpisodeImage.className = `w-10 h-10 rounded-full bg-cover bg-center object-cover`;
+        // Garante que a imagem preencha perfeitamente o círculo
+        currentEpisodeImage.style.backgroundSize = 'cover';
+        currentEpisodeImage.style.backgroundPosition = 'center center';
+        currentEpisodeImage.style.backgroundRepeat = 'no-repeat';
     };
     
     const loadEpisode = (episodeData) => {
-        try {
+      
             if (isPlaying) {
                 pause();
             }
@@ -595,11 +596,7 @@ const audioManager = (() => {
             
             audioElement.addEventListener('loadedmetadata', setDuration, { once: true });
             
-        } catch (error) {
-            console.error('Erro ao carregar episódio:', error);
-            player.classList.remove('hidden');
-        }
-    };
+         };
     
     const play = async () => {
         try {
@@ -744,15 +741,13 @@ function initializeSearchSystem() {
         episodeDiv.className = `episode flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg hover:bg-gray-800 cursor-pointer transition-colors episode-transition ${episode.bannerGradient ? 'active-banner' : ''}`;
         episodeDiv.dataset.episodeId = episode.id;
         
-        const gradientClasses = episode.imageGradient || 'from-purple-500 to-blue-500';
-        
         episodeDiv.innerHTML = `
             <!-- Conteúdo Principal -->
             <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                 <!-- Ícone do Episódio -->
                 <div class="flex-shrink-0">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${gradientClasses} rounded-full flex items-center justify-center">
-                        <i class="fa-solid fa-play text-white text-xs sm:text-sm"></i>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-cover bg-center"
+                         style="background-image: url('${episode.imageUrl}'); background-size: cover; background-position: center center; background-repeat: no-repeat;">
                     </div>
                 </div>
                 
