@@ -877,6 +877,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeSearchSystem();
     
     try {
+        
         await initializeBlockchainWithMusics();
         console.log('Sistema de áudio carregado com sucesso!');
         console.log('Navegação entre músicas configurada:');
